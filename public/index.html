@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>PokeChat</title>
+		<script src="/socket.io/socket.io.js"></script>
+		<script type="text/javascript" src="http://code.jquery.com/jquery-1.8.3.min.js"></script>
+		<link rel="stylesheet" type="text/css" href="main.css"></link>
+	</head>
+
+	<body>
+		<script>
+		$(document).ready(function() {
+			var serv = io.connect('http://localhost:8080');
+			var nickname;
+
+			serv.on('chat', function(data){
+				updateMessages(data, false);
+			});
+
+			serv.on('connect', function(data){
+				nickname = prompt("Quel est ton nom dresseur?");
+				serv.emit('join', nickname);
+			});
+
+			serv.on('dresseur', function(nom){
+				var dresseur = $('<p class="pseudo" data-pseudo=\"'+nom+'\">'+nom+'</p>');
+				$(".pseudowindow").append(dresseur);
+				$(".chatwindow").append("<p><b>"+nom+"</b> <em>viens de se connecter</em></p>");
+				var window= $('.chatwindow')
+				window.animate({scrollTop: window.prop("scrollHeight") - window.height()}, 200);
+			});
+
+			serv.on('remove', function(nom){
+				$(".pseudo[data-pseudo="+nom+"]").remove();
+			});
+
+			$('#chat_form').submit(function(e){
+				var message = $('#message').val();
+				serv.emit('messages', message);
+				updateMessages(message, true);
+				$('#message').val('');
+				return false; //Pour stopper l'envoi, inutile
+			});
+
+			var updateMessages = function(data, local){
+				if(local)
+				{
+					console.log(data);
+					$(".chatwindow").append("<div class=\"message\"><p><b>"+nickname+"</b><br/>"+data+"</p></div>");
+				}
+				else{
+					console.log(data);
+					$(".chatwindow").append("<div class=\"message\"><p><b>"+data.pseudo+"</b><br/>"+data.message+"</p></div>");
+				}
+				var window= $('.chatwindow')
+				window.animate({scrollTop: window.prop("scrollHeight") - window.height()}, 200);
+
+			}
+
+		});
+
+		</script>
+		<div class="wrapchat">
+			<div class="pseudowindow">
+			</div>
+			<div class="chatwindow">
+		
+			</div>
+
+			<form id="chat_form">
+					<input type="text" name="message" id="message"></input>
+					<input type="submit" text="Envoyer le message"></input>
+			</form>
+		</div>
+	</body>
+
+</html>
